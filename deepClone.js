@@ -9,7 +9,6 @@ function deepClone(source, hash = new WeakMap()) {
   hash.set(source, target)
 
   Reflect.ownKeys(target).forEach(key => {
-    // 改动 2
     if (isObject(source[key])) {
       target[key] = deepClone(source[key], hash)
     } else {
@@ -24,7 +23,6 @@ function cloneDeep3(source, uniqueList) {
 
   var target = Array.isArray(source) ? [] : {}
 
-  // ============= 新增代码
   // 数据已经存在，返回保存的数据
   var uniqueData = find(uniqueList, source)
   if (uniqueData) {
@@ -48,7 +46,7 @@ function cloneDeep3(source, uniqueList) {
   return target
 }
 
-// 新增方法，用于查找
+// 用于查找
 function find(arr, item) {
   for (var i = 0; i < arr.length; i++) {
     if (arr[i].source === item) {
