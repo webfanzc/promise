@@ -44,4 +44,4 @@ setInterval(timer => {
   a++
   if (a === 3) cancelAnimationFrame(timer)
 }, 1000)
-// setTimeout(loop, currentInterval)
+setTimeout(loop, currentInterval)

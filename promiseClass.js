@@ -1,11 +1,23 @@
+/**
+ * 判断传入参数是否为function
+ * @param {any} variable 要判断的参数
+ * @returns {Boolean} 返回一个布尔值 true为函数 false不是函数
+ */
 const isFunction = variable => typeof variable === 'function'
 class MyPromise {
+  /**
+   * @param {function} executor 处理Promise的handler 传入一个函数 函数有两个参数分别处* 理fulfilled和reject状态
+   */
   constructor(executor) {
     this.state = 'pending'
     this.value = undefined
     this.reason = undefined
     this.onResolvedCallbacks = []
     this.onRejectedCallbacks = []
+    /**
+     * promise的resolve函数 处理成功的状态
+     * @param {any} value promise的值
+     */
     let resolve = value => {
       if (this.state === 'pending') {
         this.state = 'fulfilled'
@@ -13,6 +25,10 @@ class MyPromise {
         this.onResolvedCallbacks.forEach(fn => fn(value))
       }
     }
+    /**
+     * promise的reject函数 处理拒绝的状态
+     * @param {any} reason promise被拒绝的原因
+     */
     let reject = reason => {
       if (this.state === 'pending') {
         this.state = 'rejected'
@@ -26,15 +42,47 @@ class MyPromise {
       reject(err)
     }
   }
+  static resolve(value) {
+    return value instanceof MyPromise || (value && isFunction(value.then))
+      ? value
+      : new MyPromise(resolve => resolve(value))
+  }
+  static reject(value) {
+    return new MyPromise((resolve, reject) => reject(value))
+  }
+  static race(promises) {
+    return new MyPromise((resolve, reject) => {
+      for (let p of promises) {
+        // 只要有一个实例率先改变状态，新的MyPromise的状态就跟着改变
+        this.resolve(p).then(res => {
+          resolve(res)
+        }, reject)
+      }
+    })
+  }
+  //all方法(获取所有的promise，都执行then，把结果放到数组，一起返回)
+  static all(promises) {
+    return new MyPromise((resolve, reject) => {
+      let values = [],
+        count = promises.length
+      for (let i in promises) {
+        // 数组参数如果不是MyPromise实例，先调用MyPromise.resolve
+        this.resolve(promises[i]).then(res => {
+          values[i] = res
+          // 所有状态都变成fulfilled时返回的MyPromise状态就变成fulfilled
+          --count < 1 && resolve(values)
+        }, reject)
+      }
+    })
+  }
   then(onFulfilled, onRejected) {
-    onFulfilled =
-      typeof onFulfilled === 'function' ? onFulfilled : value => value
-    onRejected =
-      typeof onRejected === 'function'
-        ? onRejected
-        : err => {
-            throw err
-          }
+    onFulfilled = isFunction(onFulfilled) ? onFulfilled : value => value
+    onRejected = isFunction(onRejected)
+      ? onRejected
+      : err => {
+          throw err
+        }
+
     let newPromise = new MyPromise((resolve, reject) => {
       if (this.state === 'fulfilled') {
         setTimeout(() => {
@@ -83,40 +131,6 @@ class MyPromise {
   }
   catch(fn) {
     return this.then(null, fn)
-  }
-  static resolve(value) {
-    return value instanceof MyPromise || (value && isFunction(value.then))
-      ? value
-      : new MyPromise(resolve => resolve(value))
-  }
-  static reject(value) {
-    return new MyPromise((resolve, reject) => reject(value))
-  }
-  static race(promises) {
-    return new MyPromise((resolve, reject) => {
-      for (let p of promises) {
-        // 只要有一个实例率先改变状态，新的MyPromise的状态就跟着改变
-        this.resolve(p).then(res => {
-          resolve(res)
-        }, reject)
-      }
-    })
-  }
-  //all方法(获取所有的promise，都执行then，把结果放到数组，一起返回)
-  static all(promises) {
-    let newPromise
-    return new MyPromise((resolve, reject) => {
-      let values = [],
-        count = promises.length
-      for (let i in promises) {
-        // 数组参数如果不是MyPromise实例，先调用MyPromise.resolve
-        this.resolve(promises[i]).then(res => {
-          values[i] = res
-          // 所有状态都变成fulfilled时返回的MyPromise状态就变成fulfilled
-          --count < 1 && resolve(values)
-        }, reject)
-      }
-    })
   }
   finally(cb) {
     return this.then(
@@ -185,19 +199,41 @@ var promise3 = new MyPromise((resolve, reject) => {
 })
 var promise4 = new MyPromise((resolve, reject) => {
   setTimeout(reject, 1000, 'foo2')
-}).then(res => {
-  return promise1
+}).catch(err => {
+  throw new Error(err)
 })
-
+setTimeout(function() {
+  console.log(1)
+}, 0)
+new Promise(function(resolve) {
+  console.log(2)
+  for (var i = 0; i < 10000; i++) {
+    i == 9999 && resolve()
+  }
+  console.log(3)
+}).then(function() {
+  console.log(4)
+})
+console.log(5)
 MyPromise.all([promise3, promise4])
   .then(function(values) {
     console.log(values, ',+++)')
   })
+  .finally(() => {
+    console.log('finally', '')
+  })
   .catch(err => {
     console.log('err', err)
   })
+Promise.all([promise3, promise4])
+  .then(function(values) {
+    console.log(values, '+')
+  })
   .finally(() => {
-    console.log('finally', '')
+    console.log('finally222', '')
+  })
+  .catch(err => {
+    console.log('err222', err)
   })
 MyPromise.deferred = MyPromise.defer = () => {
   let dfd = {}
