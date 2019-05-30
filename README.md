@@ -5,7 +5,7 @@ Promise 是异步编程的一种解决方案，比传统的解决方案 __回调
 现如今的面试中手写代码成了一项必不可少的技能,我们今天就是按照[Promise/A+](https://promisesaplus.com/)的规范使用ES6的class来自己实现一个Promise类   
 按照A+的规范 一个Promise对象需要有三种状态 分别是` pending fulfilled` 和 `rejected` 代表promise的发送状态 成功状态和拒绝状态 需要有resolve和reject两个函数来处理对应状态 需要有value 和 reason来保存promise的值和失败的原因
 有两个对应数组保存promise处理对应状态的回调函数  所以我们的Promise开始应该是这样的
-```
+```javascript
 /**
  * 判断传入参数是否为function 辅助函数
  * @param {any} variable 要判断的参数
@@ -55,7 +55,7 @@ class MyPromise {
 }
 ```
 这就是一个Promise的雏形 下面我们根据规范来一步一步的完善 Promise必须要有一个then方法来获取成功或者失败的原因 then方法接受两个参数来处理对应状况 即`promise.then(onFulfilled, onRejected)` 这两个参数都是可选的 但是必须是一个函数
-```
+```javascript
 function resolvePromise(promise, arg, resolve, reject) {
   if (arg === promise) { // 处理循环引用
      return reject(new TypeError('Promise循环引用'));
@@ -154,7 +154,7 @@ then(onFulfilled, onRejected) {
 ```
 至此 我们的Promise已经基本可以正常使用了 不过我们还可以再继续的完善一下 Promise还有两个很重要的方法 catch和finally     
 catch和finally的实现都很简单 catch其实就是then方法没有传递onFulfilled参数 只处理出现错误的情况 虽然我们可以用then来处理 但是为了代码的清晰和规范 我们最好使用catch来捕获错误 而finally方法其实就是我们不用关心当前Promise的状态 不管处于什么状态 我们都会去执行的一个回调 这里有很多人对finally有一些误解 认为finally是会在Promise的最后来执行 其实并不是这样的 他只是一个用来处理不管我们Promise成功或者失败都会执行的逻辑的方法
-```
+```javascript
  catch(fn) {
     return this.then(null, fn)
   }
@@ -169,7 +169,7 @@ catch和finally的实现都很简单 catch其实就是then方法没有传递onFu
   }
 ```
 这里我们的finally里使用了MyPromise中的静态方法 可能大家都没有看到如何实现的 这里连同resolve reject race 和 all的静态方法的实现也一并贴上
-```
+```javascript
 static resolve(value) {
 // 如果传入参数是一个Promise实例或者一个thenable的参数就直接返回传入参数 否则包装成一个新的Promise返回
     return value instanceof MyPromise || (value && isFunction(value.then)) 
@@ -208,7 +208,7 @@ static resolve(value) {
 至此我们的Promise就完整的实现了 我们可以使用`promises-aplus-tests`库来测试我们的Promise 具体如何测试大家可以自行的百度一下    
 然后就是给大家讲一下文中提到的使用setTimeout来实现的一些和原生Promise有出入的地方和一些要注意的问题    
 之所以说使用setTimeout和原生的Promise有差距是因为在底层的实现上 Promise是微任务 而setTimeout是宏任务 这就造成了我们的代码执行顺序上会有不可避免的偏差 例如如下例子
-```
+```javascript
 setTimeout(function() {
   console.log(1)
 }, 0)
